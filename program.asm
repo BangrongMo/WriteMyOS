@@ -34,8 +34,8 @@ PrintString:
 	push cx
 	push dx
 	;Clear screen
-	mov ax, 3
-	int 10h
+	;mov ax, 3
+	;int 10h
 	
 	;mov ax,0x9999
 	mov ax,VIDEOMEM

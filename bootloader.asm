@@ -1,5 +1,17 @@
 HDDPORT equ 0x1f0
+SETCHAR equ 0x07
+VIDEOMEM equ 0xb800
+STRINGLEN equ 0xff
+NUL equ 0x00
+
 section code align=16 vstart=0x7c00
+mov ax, 3
+int 10h
+
+mov si, msg
+xor di,di
+call PrintString
+
 mov si,[READSTART]
 mov cx,[READSTART+0X02] ;存储lba28地址,需要四个字节,高位cx低位si
 mov al,[SECTORNUM];要读入的扇区数量
@@ -14,7 +26,7 @@ mov ds,ax ;配置段地址
 xor di,di ;偏移地址置0
 pop ax
 
-;mov si, msg
+
 
 call READHDD
 
@@ -125,7 +137,25 @@ READHDD:
 	pop bx
 	pop ax
 	ret
+PrintString:
+	.setup:
+	mov ax,VIDEOMEM
+	mov es,ax
+	mov bh,SETCHAR
+	mov cx,STRINGLEN 
 	
+	.printchar:
+	mov bl,[ds:si]
+	inc si
+	mov [es:di],bl
+	inc di
+	mov [es:di],bh
+	inc di
+	or bl,NUL
+	jz .return
+	loop .printchar
+	.return:
+	ret
 	
 
 READSTART  dd 1
@@ -133,6 +163,6 @@ SECTORNUM  db 1
 DESTMEM	   dd 0x10000
 
 End: jmp End
-;msg db 'mbr load secucess,loading next sector... ',0
+msg db 'mbr load secucess,loading next sector... ',0
 times 510-($-$$) db 0 ; 填充剩余空间
 dw 0xAA55

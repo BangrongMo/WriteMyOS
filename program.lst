@@ -34,38 +34,38 @@
     34 0000000E 51                      	push cx
     35 0000000F 52                      	push dx
     36                                  	;Clear screen
-    37 00000010 B80300                  	mov ax, 3
-    38 00000013 CD10                    	int 10h
+    37                                  	;mov ax, 3
+    38                                  	;int 10h
     39                                  	
     40                                  	;mov ax,0x9999
-    41 00000015 B800B8                  	mov ax,VIDEOMEM
-    42 00000018 8EC0                    	mov es,ax
-    43 0000001A 31FF                    	xor di,di
+    41 00000010 B800B8                  	mov ax,VIDEOMEM
+    42 00000013 8EC0                    	mov es,ax
+    43 00000015 31FF                    	xor di,di
     44                                  	
-    45 0000001C B707                    	mov bh,SETCHAR
-    46 0000001E B9FFFF                  	mov cx,STRINGLEN 
+    45 00000017 B707                    	mov bh,SETCHAR
+    46 00000019 B9FFFF                  	mov cx,STRINGLEN 
     47                                  	
     48                                  	.printchar:
-    49 00000021 3E8A1C                  	mov bl,[ds:si]
-    50 00000024 46                      	inc si
-    51 00000025 26881D                  	mov [es:di],bl
-    52 00000028 47                      	inc di
-    53 00000029 26883D                  	mov [es:di],bh
-    54 0000002C 47                      	inc di
-    55 0000002D 80CB00                  	or bl,NUL
-    56 00000030 7402                    	jz .return
-    57 00000032 E2ED                    	loop .printchar
+    49 0000001C 3E8A1C                  	mov bl,[ds:si]
+    50 0000001F 46                      	inc si
+    51 00000020 26881D                  	mov [es:di],bl
+    52 00000023 47                      	inc di
+    53 00000024 26883D                  	mov [es:di],bh
+    54 00000027 47                      	inc di
+    55 00000028 80CB00                  	or bl,NUL
+    56 0000002B 7402                    	jz .return
+    57 0000002D E2ED                    	loop .printchar
     58                                  	.return:
-    59 00000034 89FB                    	  mov bx, di
-    60 00000036 5A                      	 pop dx
-    61 00000037 59                      	 pop cx
-    62 00000038 5B                      	 pop bx
-    63 00000039 58                      	 pop ax
-    64 0000003A C3                      	  ret
+    59 0000002F 89FB                    	  mov bx, di
+    60 00000031 5A                      	 pop dx
+    61 00000032 59                      	 pop cx
+    62 00000033 5B                      	 pop bx
+    63 00000034 58                      	 pop ax
+    64 00000035 C3                      	  ret
     65                                  
-    66 0000003B 0A000000                READSTART dd 10
-    67 0000003F 01                      SECTORNUM  db 1
-    68 00000040 00000100                DESTMEM	   dd 0x10000
+    66 00000036 0A000000                READSTART dd 10
+    67 0000003A 01                      SECTORNUM  db 1
+    68 0000003B 00000100                DESTMEM	   dd 0x10000
     69                                  
     70                                  
     71                                  section data align=16 vstart=0
