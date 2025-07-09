@@ -70,6 +70,7 @@ DESTMEM	   dd 0x10000
 
 section data align=16 vstart=0
 	Hello db 'Hello World ,I am from program on sector 2,loaded by bootloader',0
+	
 section stack align=16 vstart=0
 	resb 128
 section end align=16
