@@ -5,13 +5,11 @@ STRINGLEN equ 0xff
 NUL equ 0x00
 
 section code align=16 vstart=0x7c00
-mov ax, 3
+mov ax, 3	;Clear screen
 int 10h
+call PrintLine
 
-mov si, msg
 xor di,di
-call PrintString
-
 mov si,[READSTART]
 mov cx,[READSTART+0X02] ;存储lba28地址,需要四个字节,高位cx低位si
 mov al,[SECTORNUM];要读入的扇区数量
@@ -29,7 +27,6 @@ pop ax
 
 
 call READHDD
-
 
 ;加载完program.bin后，里面编译好的段地址和偏移地址是不能直接用的，
 ;因为编译器是按照program作为第一个扇区的程序来设置地址的
@@ -137,6 +134,20 @@ READHDD:
 	pop bx
 	pop ax
 	ret
+
+PrintLine:
+	mov cx,msgEnd-msgStart;类似for循环，先确定循环次数 ,为了代码好理解，放在printLine中，实际为了代码灵活性，应该放在上一级函数中
+	mov si,msgStart
+	mov bl,0x07 ;指定字符的显示属性,白色（0x7）,黑色（0x0）
+	.putc:
+	mov al,[si]
+	inc si
+	mov ah,0x0e
+	int 0x10
+	loop .putc
+	ret
+
+%if 0
 PrintString:
 	.setup:
 	mov ax,VIDEOMEM
@@ -157,12 +168,16 @@ PrintString:
 	.return:
 	ret
 	
+%endif
 
 READSTART  dd 1
 SECTORNUM  db 1
 DESTMEM	   dd 0x10000
 
 End: jmp End
-msg db 'mbr load secucess,loading next sector... ',0
+
+msgStart db 'mbr loaded secucessly,now loading next sector... '
+msgEnd db 0x00
+
 times 510-($-$$) db 0 ; 填充剩余空间
 dw 0xAA55
