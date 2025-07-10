@@ -2,6 +2,8 @@ NUL equ 0x00
 SETCHAR equ 0x07
 VIDEOMEM equ 0xb800
 STRINGLEN equ 0xffff
+VGACMDPORT equ 0x3d4
+VGADATAPORT equ 0x3d5
 
 section head align=16 vstart=0
 
@@ -20,9 +22,13 @@ section head align=16 vstart=0
 	
 section code align=16 vstart=0
 
-CodeStart:
+CodeStart: ;初始化寄存器的各个段
 	mov ax,[DataSeg]
-	mov ds,ax
+	mov ds,ax 
+	mov ax,[StackSeg]
+	mov ss,ax
+	mov sp ,StackEnd
+	
 	xor si,si
 	call PrintString
 	jmp $
@@ -36,7 +42,6 @@ PrintString:
 	;Clear screen
 	;mov ax, 3
 	;int 10h
-	
 	;mov ax,0x9999
 	mov ax,VIDEOMEM
 	mov es,ax
@@ -47,13 +52,50 @@ PrintString:
 	
 	.printchar:
 	mov bl,[ds:si]
+	
+	cmp bl,0x0d
+	jz .putCR
+	cmp bl,0x0a
+	jz .putLF
+	or bl,NUL ;优化执行流程，写入显存以前应该先判断是换行还是回车还是普通字符
+	jz .return
+	
+	
+	
 	inc si
 	mov [es:di],bl
 	inc di
 	mov [es:di],bh
 	inc di
-	or bl,NUL
-	jz .return
+	call SetCursor
+	jmp .loopEnd
+
+	;字符输出中，每输出一个字符，si+1,di+2
+	;0xOD 输出回车 0x0A 换行
+	 .putCR: ;计算当前行第一个字符在屏幕总字符的位置 之planA :321 / 160 =2,2x160=320.得到开头字符是第320个
+	 ;mov bl,160
+	 ;mov ax,di
+	 ;div bl
+	 ;mul bl
+	 ;mov di,ax
+	 
+	 mov bl,160 ;planB 321/160=2...1,321-1=320,得到开头字符是第320个
+	 mov ax,di
+	 div bl ;低八位AL 存储除法的商,高八位 AH 存储除法的余数。
+	 shr ax,8 ;让al存储余数
+	 sub di, ax
+	 call SetCursor
+	 inc si
+	 jmp .loopEnd
+	 
+	 
+	 .putLF: ;换行
+	 add di,160;
+	 call SetCursor
+	 inc si
+	 jmp .loopEnd
+ 
+	.loopEnd:
 	loop .printchar
 	.return:
 	  mov bx, di
@@ -63,15 +105,53 @@ PrintString:
 	 pop ax
 	  ret
 
+SetCursor:
+	push dx
+	push bx
+	push ax
+	mov ax,di
+	mov dx,0
+	mov bx,2
+	div bx ;计算字符地址，因为一个di =2*si
+	
+	mov bx,ax
+	mov dx,VGACMDPORT
+	mov al ,0x0e ;显卡寄存器 低位
+	out dx,al;
+	mov dx,VGADATAPORT
+	mov al,bh
+	out dx,al 
+	mov dx,VGACMDPORT
+	mov al,0x0f ;高位
+	out dx,al
+	mov dx,VGADATAPORT
+	mov al,bl
+	out dx,al
+	
+	
+	pop ax
+	pop bx
+	pop dx
+	ret
+
 READSTART dd 10
 SECTORNUM  db 1
 DESTMEM	   dd 0x10000
 
 
 section data align=16 vstart=0
-	Hello db 'Hello World ,I am from program on sector 2,loaded by bootloader',0
-	
+	Hello db 'Hello World ,I am from program on sector 2,loaded by bootloader'
+	db 0x0d , 0x0a
+	db 'now system is testing new line function if cr lt do not work ,halt the OS'
+	db 0x0a
+	db 'this line test 0x0a'
+	db 0x0d
+	db 'this line test 0x0d'
+	dw 0x0a0d
+	db 'this line test 0x0d 0x0a'
+	db 0x00
+	StackEnd:
 section stack align=16 vstart=0
-	resb 128
+	times 128 db 0 ;同样占位128,替代resb 128,避免警告
 section end align=16
 	ProgramEnd:
