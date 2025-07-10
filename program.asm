@@ -28,11 +28,41 @@ CodeStart: ;初始化寄存器的各个段
 	mov ax,[StackSeg]
 	mov ss,ax
 	mov sp ,StackEnd
-	
 	xor si,si
-	call PrintString
+	call PrintLine
 	jmp $
+	
+PrintLine:
 
+	mov cx,HelloEnd-Hello ;类似for循环，先确定循环次数
+	xor si,si
+	mov bl,0x07 ;指定字符的显示属性,白色（0x7）,黑色（0x0）
+	.putc:
+	mov al,[si]
+	inc si
+	mov ah,0x0e
+	int 0x10
+	loop .putc
+
+	ret
+
+%if 0
+	xor si,si;   类似while循环，每次需要判断字符是否为0x00,消耗更多cpu周期
+	mov bl, 0x07
+	.putc:
+	mov al,[si]
+	cmp al,0x00
+	je .return
+	inc si
+	mov ah,0x0e
+	int 0x10
+	loop .putc
+	.return:
+	ret
+%endif	
+	
+	
+%if 0
 PrintString:
     .setup:
     push ax
@@ -133,6 +163,7 @@ SetCursor:
 	pop bx
 	pop dx
 	ret
+%endif
 
 READSTART dd 10
 SECTORNUM  db 1
@@ -149,7 +180,9 @@ section data align=16 vstart=0
 	db 'this line test 0x0d'
 	dw 0x0a0d
 	db 'this line test 0x0d 0x0a'
-	db 0x00
+	dw 0x0a0d
+	db 'this context output powered by bios int 0x10'
+	HelloEnd db 0x00
 	StackEnd:
 section stack align=16 vstart=0
 	times 128 db 0 ;同样占位128,替代resb 128,避免警告

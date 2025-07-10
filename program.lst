@@ -27,150 +27,188 @@
     27 00000003 8ED8                    	mov ds,ax 
     28 00000005 A1[0C00]                	mov ax,[StackSeg]
     29 00000008 8ED0                    	mov ss,ax
-    30 0000000A BC[CA00]                	mov sp ,StackEnd
-    31                                  	
-    32 0000000D 31F6                    	xor si,si
-    33 0000000F E80200                  	call PrintString
-    34 00000012 EBFE                    	jmp $
-    35                                  
-    36                                  PrintString:
-    37                                      .setup:
-    38 00000014 50                          push ax
-    39 00000015 53                      	push bx
-    40 00000016 51                      	push cx
-    41 00000017 52                      	push dx
-    42                                  	;Clear screen
-    43                                  	;mov ax, 3
-    44                                  	;int 10h
-    45                                  	;mov ax,0x9999
-    46 00000018 B800B8                  	mov ax,VIDEOMEM
-    47 0000001B 8EC0                    	mov es,ax
-    48 0000001D 31FF                    	xor di,di
-    49                                  	
-    50 0000001F B707                    	mov bh,SETCHAR
-    51 00000021 B9FFFF                  	mov cx,STRINGLEN 
-    52                                  	
-    53                                  	.printchar:
-    54 00000024 3E8A1C                  	mov bl,[ds:si]
-    55                                  	
-    56 00000027 80FB0D                  	cmp bl,0x0d
-    57 0000002A 7418                    	jz .putCR
-    58 0000002C 80FB0A                  	cmp bl,0x0a
-    59 0000002F 7424                    	jz .putLF
-    60 00000031 80CB00                  	or bl,NUL ;优化执行流程，写入显存以前应该先判断是换行还是回车还是普通字符
-    61 00000034 742B                    	jz .return
-    62                                  	
+    30 0000000A BC[FB00]                	mov sp ,StackEnd
+    31 0000000D 31F6                    	xor si,si
+    32 0000000F E80200                  	call PrintLine
+    33 00000012 EBFE                    	jmp $
+    34                                  	
+    35                                  PrintLine:
+    36                                  
+    37 00000014 B9FA00                  	mov cx,HelloEnd-Hello ;类似for循环，先确定循环次数
+    38 00000017 31F6                    	xor si,si
+    39 00000019 B307                    	mov bl,0x07 ;指定字符的显示属性,白色（0x7）,黑色（0x0）
+    40                                  	.putc:
+    41 0000001B 8A04                    	mov al,[si]
+    42 0000001D 46                      	inc si
+    43 0000001E B40E                    	mov ah,0x0e
+    44 00000020 CD10                    	int 0x10
+    45 00000022 E2F7                    	loop .putc
+    46                                  
+    47 00000024 C3                      	ret
+    48                                  
+    49                                  %if 0
+    50                                  	xor si,si;   类似while循环，每次需要判断字符是否为0x00,消耗更多cpu周期
+    51                                  	mov bl, 0x07
+    52                                  	.putc:
+    53                                  	mov al,[si]
+    54                                  	cmp al,0x00
+    55                                  	je .return
+    56                                  	inc si
+    57                                  	mov ah,0x0e
+    58                                  	int 0x10
+    59                                  	loop .putc
+    60                                  	.return:
+    61                                  	ret
+    62                                  %endif	
     63                                  	
     64                                  	
-    65 00000036 46                      	inc si
-    66 00000037 26881D                  	mov [es:di],bl
-    67 0000003A 47                      	inc di
-    68 0000003B 26883D                  	mov [es:di],bh
-    69 0000003E 47                      	inc di
-    70 0000003F E82600                  	call SetCursor
-    71 00000042 EB1B                    	jmp .loopEnd
-    72                                  
-    73                                  	;字符输出中，每输出一个字符，si+1,di+2
-    74                                  	;0xOD 输出回车 0x0A 换行
-    75                                  	 .putCR: ;计算当前行第一个字符在屏幕总字符的位置 之planA :321 / 160 =2,2x160=320.得到开头字符是第320个
-    76                                  	 ;mov bl,160
-    77                                  	 ;mov ax,di
-    78                                  	 ;div bl
-    79                                  	 ;mul bl
-    80                                  	 ;mov di,ax
-    81                                  	 
-    82 00000044 B3A0                    	 mov bl,160 ;planB 321/160=2...1,321-1=320,得到开头字符是第320个
-    83 00000046 89F8                    	 mov ax,di
-    84 00000048 F6F3                    	 div bl ;低八位AL 存储除法的商,高八位 AH 存储除法的余数。
-    85 0000004A C1E808                  	 shr ax,8 ;让al存储余数
-    86 0000004D 29C7                    	 sub di, ax
-    87 0000004F E81600                  	 call SetCursor
-    88 00000052 46                      	 inc si
-    89 00000053 EB0A                    	 jmp .loopEnd
-    90                                  	 
-    91                                  	 
-    92                                  	 .putLF: ;换行
-    93 00000055 81C7A000                	 add di,160;
-    94 00000059 E80C00                  	 call SetCursor
-    95 0000005C 46                      	 inc si
-    96 0000005D EB00                    	 jmp .loopEnd
-    97                                   
-    98                                  	.loopEnd:
-    99 0000005F E2C3                    	loop .printchar
-   100                                  	.return:
-   101 00000061 89FB                    	  mov bx, di
-   102 00000063 5A                      	 pop dx
-   103 00000064 59                      	 pop cx
-   104 00000065 5B                      	 pop bx
-   105 00000066 58                      	 pop ax
-   106 00000067 C3                      	  ret
-   107                                  
-   108                                  SetCursor:
-   109 00000068 52                      	push dx
-   110 00000069 53                      	push bx
-   111 0000006A 50                      	push ax
-   112 0000006B 89F8                    	mov ax,di
-   113 0000006D BA0000                  	mov dx,0
-   114 00000070 BB0200                  	mov bx,2
-   115 00000073 F7F3                    	div bx ;计算字符地址，因为一个di =2*si
-   116                                  	
-   117 00000075 89C3                    	mov bx,ax
-   118 00000077 BAD403                  	mov dx,VGACMDPORT
-   119 0000007A B00E                    	mov al ,0x0e ;显卡寄存器 低位
-   120 0000007C EE                      	out dx,al;
-   121 0000007D BAD503                  	mov dx,VGADATAPORT
-   122 00000080 88F8                    	mov al,bh
-   123 00000082 EE                      	out dx,al 
-   124 00000083 BAD403                  	mov dx,VGACMDPORT
-   125 00000086 B00F                    	mov al,0x0f ;高位
-   126 00000088 EE                      	out dx,al
-   127 00000089 BAD503                  	mov dx,VGADATAPORT
-   128 0000008C 88D8                    	mov al,bl
-   129 0000008E EE                      	out dx,al
-   130                                  	
-   131                                  	
-   132 0000008F 58                      	pop ax
-   133 00000090 5B                      	pop bx
-   134 00000091 5A                      	pop dx
-   135 00000092 C3                      	ret
-   136                                  
-   137 00000093 0A000000                READSTART dd 10
-   138 00000097 01                      SECTORNUM  db 1
-   139 00000098 00000100                DESTMEM	   dd 0x10000
-   140                                  
-   141                                  
-   142                                  section data align=16 vstart=0
-   143 00000000 48656C6C6F20576F72-     	Hello db 'Hello World ,I am from program on sector 2,loaded by bootloader'
-   143 00000009 6C64202C4920616D20-
-   143 00000012 66726F6D2070726F67-
-   143 0000001B 72616D206F6E207365-
-   143 00000024 63746F7220322C6C6F-
-   143 0000002D 616465642062792062-
-   143 00000036 6F6F746C6F61646572 
-   144 0000003F 0D0A                    	db 0x0d , 0x0a
-   145 00000041 6E6F77207379737465-     	db 'now system is test new line function if cr lt do not work ,halt the OS'
-   145 0000004A 6D2069732074657374-
-   145 00000053 206E6577206C696E65-
-   145 0000005C 2066756E6374696F6E-
-   145 00000065 206966206372206C74-
-   145 0000006E 20646F206E6F742077-
-   145 00000077 6F726B202C68616C74-
-   145 00000080 20746865204F53     
-   146 00000087 0A                      	db 0x0a
-   147 00000088 74686973206C696E65-     	db 'this line test 0x0a'
-   147 00000091 207465737420307830-
-   147 0000009A 61                 
-   148 0000009B 0D                      	db 0x0d
-   149 0000009C 74686973206C696E65-     	db 'this line test 0x0d'
-   149 000000A5 207465737420307830-
-   149 000000AE 64                 
-   150 000000AF 0D0A                    	dw 0x0a0d
-   151 000000B1 74686973206C696E65-     	db 'this line test 0x0d 0x0a'
-   151 000000BA 207465737420307830-
-   151 000000C3 642030783061       
-   152 000000C9 00                      	db 0x00
-   153                                  	StackEnd:
-   154                                  section stack align=16 vstart=0
-   155 00000000 00<rep 80h>             	times 128 db 0 ;同样占位128,替代resb 128,避免警告
-   156                                  section end align=16
-   157                                  	ProgramEnd:
+    65                                  %if 0
+    66                                  PrintString:
+    67                                      .setup:
+    68                                      push ax
+    69                                  	push bx
+    70                                  	push cx
+    71                                  	push dx
+    72                                  	;Clear screen
+    73                                  	;mov ax, 3
+    74                                  	;int 10h
+    75                                  	;mov ax,0x9999
+    76                                  	mov ax,VIDEOMEM
+    77                                  	mov es,ax
+    78                                  	xor di,di
+    79                                  	
+    80                                  	mov bh,SETCHAR
+    81                                  	mov cx,STRINGLEN 
+    82                                  	
+    83                                  	.printchar:
+    84                                  	mov bl,[ds:si]
+    85                                  	
+    86                                  	cmp bl,0x0d
+    87                                  	jz .putCR
+    88                                  	cmp bl,0x0a
+    89                                  	jz .putLF
+    90                                  	or bl,NUL ;优化执行流程，写入显存以前应该先判断是换行还是回车还是普通字符
+    91                                  	jz .return
+    92                                  	
+    93                                  	
+    94                                  	
+    95                                  	inc si
+    96                                  	mov [es:di],bl
+    97                                  	inc di
+    98                                  	mov [es:di],bh
+    99                                  	inc di
+   100                                  	call SetCursor
+   101                                  	jmp .loopEnd
+   102                                  
+   103                                  	;字符输出中，每输出一个字符，si+1,di+2
+   104                                  	;0xOD 输出回车 0x0A 换行
+   105                                  	 .putCR: ;计算当前行第一个字符在屏幕总字符的位置 之planA :321 / 160 =2,2x160=320.得到开头字符是第320个
+   106                                  	 ;mov bl,160
+   107                                  	 ;mov ax,di
+   108                                  	 ;div bl
+   109                                  	 ;mul bl
+   110                                  	 ;mov di,ax
+   111                                  	 
+   112                                  	 mov bl,160 ;planB 321/160=2...1,321-1=320,得到开头字符是第320个
+   113                                  	 mov ax,di
+   114                                  	 div bl ;低八位AL 存储除法的商,高八位 AH 存储除法的余数。
+   115                                  	 shr ax,8 ;让al存储余数
+   116                                  	 sub di, ax
+   117                                  	 call SetCursor
+   118                                  	 inc si
+   119                                  	 jmp .loopEnd
+   120                                  	 
+   121                                  	 
+   122                                  	 .putLF: ;换行
+   123                                  	 add di,160;
+   124                                  	 call SetCursor
+   125                                  	 inc si
+   126                                  	 jmp .loopEnd
+   127                                   
+   128                                  	.loopEnd:
+   129                                  	loop .printchar
+   130                                  	.return:
+   131                                  	  mov bx, di
+   132                                  	 pop dx
+   133                                  	 pop cx
+   134                                  	 pop bx
+   135                                  	 pop ax
+   136                                  	  ret
+   137                                  
+   138                                  SetCursor:
+   139                                  	push dx
+   140                                  	push bx
+   141                                  	push ax
+   142                                  	mov ax,di
+   143                                  	mov dx,0
+   144                                  	mov bx,2
+   145                                  	div bx ;计算字符地址，因为一个di =2*si
+   146                                  	
+   147                                  	mov bx,ax
+   148                                  	mov dx,VGACMDPORT
+   149                                  	mov al ,0x0e ;显卡寄存器 低位
+   150                                  	out dx,al;
+   151                                  	mov dx,VGADATAPORT
+   152                                  	mov al,bh
+   153                                  	out dx,al 
+   154                                  	mov dx,VGACMDPORT
+   155                                  	mov al,0x0f ;高位
+   156                                  	out dx,al
+   157                                  	mov dx,VGADATAPORT
+   158                                  	mov al,bl
+   159                                  	out dx,al
+   160                                  	
+   161                                  	
+   162                                  	pop ax
+   163                                  	pop bx
+   164                                  	pop dx
+   165                                  	ret
+   166                                  %endif
+   167                                  
+   168 00000025 0A000000                READSTART dd 10
+   169 00000029 01                      SECTORNUM  db 1
+   170 0000002A 00000100                DESTMEM	   dd 0x10000
+   171                                  
+   172                                  
+   173                                  section data align=16 vstart=0
+   174 00000000 48656C6C6F20576F72-     	Hello db 'Hello World ,I am from program on sector 2,loaded by bootloader'
+   174 00000009 6C64202C4920616D20-
+   174 00000012 66726F6D2070726F67-
+   174 0000001B 72616D206F6E207365-
+   174 00000024 63746F7220322C6C6F-
+   174 0000002D 616465642062792062-
+   174 00000036 6F6F746C6F61646572 
+   175 0000003F 0D0A                    	db 0x0d , 0x0a
+   176 00000041 6E6F77207379737465-     	db 'now system is testing new line function if cr lt do not work ,halt the OS'
+   176 0000004A 6D2069732074657374-
+   176 00000053 696E67206E6577206C-
+   176 0000005C 696E652066756E6374-
+   176 00000065 696F6E206966206372-
+   176 0000006E 206C7420646F206E6F-
+   176 00000077 7420776F726B202C68-
+   176 00000080 616C7420746865204F-
+   176 00000089 53                 
+   177 0000008A 0A                      	db 0x0a
+   178 0000008B 74686973206C696E65-     	db 'this line test 0x0a'
+   178 00000094 207465737420307830-
+   178 0000009D 61                 
+   179 0000009E 0D                      	db 0x0d
+   180 0000009F 74686973206C696E65-     	db 'this line test 0x0d'
+   180 000000A8 207465737420307830-
+   180 000000B1 64                 
+   181 000000B2 0D0A                    	dw 0x0a0d
+   182 000000B4 74686973206C696E65-     	db 'this line test 0x0d 0x0a'
+   182 000000BD 207465737420307830-
+   182 000000C6 642030783061       
+   183 000000CC 0D0A                    	dw 0x0a0d
+   184 000000CE 7468697320636F6E74-     	db 'this context output powered by bios int 0x10'
+   184 000000D7 657874206F75747075-
+   184 000000E0 7420706F7765726564-
+   184 000000E9 2062792062696F7320-
+   184 000000F2 696E742030783130   
+   185 000000FA 00                      	HelloEnd db 0x00
+   186                                  	StackEnd:
+   187                                  section stack align=16 vstart=0
+   188 00000000 00<rep 80h>             	times 128 db 0 ;同样占位128,替代resb 128,避免警告
+   189                                  section end align=16
+   190                                  	ProgramEnd:
