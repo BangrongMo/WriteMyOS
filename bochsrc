@@ -1,5 +1,5 @@
 # 模拟的内存大小（MB）
-megs: 32
+megs: 128
 
 # ROM BIOS 和 VGA BIOS 镜像
 romimage: file=/usr/share/bochs/BIOS-bochs-latest
