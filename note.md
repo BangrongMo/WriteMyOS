@@ -1,3 +1,7 @@
+[TOCM]
+
+[TOC]
+
 # FAT32:
 ### 1、mbr bootloader加载分区表，从每个分区描述的开头查找活动分区
 ### 2、文件系统中用4个字节描述一个簇，簇往往在4096b~128k之间
@@ -54,4 +58,29 @@ DataRegionLBA = Partition_Start_LBA
 
 
 
-### End
+# 实模式到保护模式到长模式
+### 定义GDT 全局描述符
+- 包含段描述符（*空描述符、*数据段描述符、*代码段描述符、调用门，任务门） *为必须
+- LDT
+- 调用门
+- 任务门等
+### 定义GDT后告知CPU
+- GDT:
+	dw GDTSize (16bit)
+	dd GDTBase (32bit内存地址)
+	描述一个GDT要48bit
+- LGDT:
+	LGDT Address ;从指定地址读取6个字节（48bit），得到的数据保存到GDTR
+
+-	修改CPU CR0的PE位,清空流水线:
+
+```nasm
+EnableProtectModel:
+	mov eax,0x40000023
+	mov cr0,eax
+	jmp CodeDes:ProtectLand
+	BITS 32
+	ProtectLand:
+		mov  eax, 0x0000000A
+	
+```
