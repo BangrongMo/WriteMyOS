@@ -177,7 +177,7 @@ PrintString:
 		mov al,[si]
 		mov ah,0x0e
 		int 0x10
-		cmp byte [si],0x0a
+		cmp byte [si],0
 		je .return
 		inc si
 		loop .printchar	
@@ -204,8 +204,7 @@ BootloaderEnd:
 	hlt
 
 
-PartitionFound db 'stage1: PartitionFound',0
-InitialFound db 'stage2: INITIAL.BIN FOUND! LOADING FILE.'
+
 
 DiskAddressPacket:
 	PackSize db 0x10 ;整个结构体大小
@@ -217,9 +216,11 @@ DiskAddressPacket:
 	BlockHigh dd 0 ;磁盘起始块高地址
 
 
-MyException db "error",0
-BootloaderStart db 'load mbr success ! check bios basic function',0
-GotoInitial db 'INITIAL LOADED! READY TO BOOT',0
+MyException db "error",0x0d,0x0a,0
+BootloaderStart db 'check INT 13',0x0d,0x0a,0
+GotoInitial db 'READY TO BOOT',0x0d,0x0a,0
+PartitionFound db 'PartitionFound',0x0d,0x0a,0
+InitialFound db 'INITIAL.BIN FOUND!',0x0d,0x0a,0
 
 End: jmp End
 
