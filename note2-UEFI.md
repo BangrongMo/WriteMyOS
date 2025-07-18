@@ -26,7 +26,7 @@ UEFI（统一可扩展固件接口）启动过程从系统加电开始，经历�
 
 ---
 
-## 🧩 PEI阶段（Pre-EFI Initialization）
+## 🧩 PEI阶段（Pre-EFI Initialization /CPU和主板厂商提供）
 
 - **初始化内存控制器**：真正的内存开始可用。
 - **加载PEIM模块**：通过 PEI Dispatcher 调度各个 PEIM（模块化设计）。
@@ -35,7 +35,7 @@ UEFI（统一可扩展固件接口）启动过程从系统加电开始，经历�
 
 ---
 
-## 🛠️ DXE阶段（Driver Execution Environment）
+## 🛠️ DXE阶段（Driver Execution Environment IO设备厂商提供）
 
 - **加载DXE核心**：初始化 Boot Services、Runtime Services。
 - **驱动调度**：DXE Dispatcher 加载并执行所有驱动。
@@ -52,14 +52,14 @@ UEFI（统一可扩展固件接口）启动过程从系统加电开始，经历�
 
 ---
 
-## 🧬 TSL阶段（Transient System Load）
+## 🧬 TSL阶段（Transient System Load/运行厂商efi文件,通常为bootx64.efi或者bootia32.efi）
 
-- **加载OS Loader**：如 GRUB 加载 Linux 内核。
+- **加载OS Loader**：如 GRUB 加载 Linux 内核/。
 - **调用 ExitBootServices()**：释放UEFI控制权，进入操作系统。
 
 ---
 
-## 🧠 RT阶段（Runtime）
+## 🧠 RT阶段（Runtime ）
 
 - **操作系统接管**：UEFI只保留 Runtime Services（如时间服务、变量访问）。
 - **MM模式运行**：UEFI运行时服务在独立内存空间中运行，避免与OS冲突。
