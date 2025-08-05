@@ -65,3 +65,15 @@ UEFI（统一可扩展固件接口）启动过程从系统加电开始，经历�
 - **MM模式运行**：UEFI运行时服务在独立内存空间中运行，避免与OS冲突。
 
 ---
+
+## UEFI 底层服务
+### BootService
+- 服务TSL阶段，
+- 让loader （如grub）获取部分数据后加载OS
+- 作为中间桥梁，在BootService结束前，取出OS启动需要的数据
+- grub可以同时使用到BootService和RuntimeService
+
+### RuntimeService
+- 在UEFI整个生命周期
+
+- 提供服务很少
